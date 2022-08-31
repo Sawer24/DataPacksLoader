@@ -26,4 +26,12 @@ public class DataPackMapperBuilder<ContextT>
         _logger = logger;
         return this;
     }
+
+    public DataPackMapperBuilder<ContextT> UseOptions(Action<DataPackMapperOptionsBuilder> action)
+    {
+        var builder = new DataPackMapperOptionsBuilder();
+        action.Invoke(builder);
+        UseOptions(builder.Build());
+        return this;
+    }
 }
