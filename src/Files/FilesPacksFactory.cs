@@ -31,8 +31,7 @@ public static class PacksLoaderFactory
             {
                 Factories = new List<IDataCombinerFactory>
                 {
-                    new CollectionsDataCombinerFactory(),
-                    new DictionariesDataCombinerFactory()
+                    new CollectionsDataCombinerFactory()
                 }
             }
         };
