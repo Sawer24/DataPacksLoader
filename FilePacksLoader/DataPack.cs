@@ -1,75 +1,91 @@
-﻿using FilePacksLoader.Schema;
-using Microsoft.Extensions.Logging;
-using System.Linq.Expressions;
+﻿using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace FilePacksLoader;
 
-public abstract class DataPack<ContextT> : IDataPack<ContextT> where ContextT : class, new()
+public class DataPack<ContextT> : IDataPack<ContextT>
+    where ContextT : class, new()
 {
-    private static readonly Delegate _parser;
-    private static readonly Dictionary<string, Delegate> _updaters;
-
-    static DataPack()
-    {
-        var packType = typeof(DataPack<ContextT>);
-        var contextType = typeof(ContextT);
-        var contextParam = Expression.Parameter(contextType, "pack");
-
-        var setProperties = contextType.GetProperties()
-            .Where(p => !p.GetCustomAttributes(typeof(NotMappedAttribute), false).Any())
-            .Select(p =>
-            {
-                var pAttribute = (PropertyNameAttribute?)p.GetCustomAttributes(typeof(PropertyNameAttribute), false).FirstOrDefault();
-
-                var name = pAttribute != null ? pAttribute.Name : p.Name;
-
-                var propertyExp = Expression.Property(contextParam, p.Name);
-                var value = Expression.TypeAs(
-                    Expression.Call(contextParam,
-                        packType.GetMethod("GetData", new[] { typeof(string), typeof(string), typeof(Type) })!,
-                        Expression.Constant(p.Name),
-                        Expression.Constant(name),
-                        Expression.Constant(p.PropertyType)),
-                    p.PropertyType);
-
-                Expression setProperty = Expression.Assign(propertyExp, value);
-
-                if (p.GetCustomAttributes(typeof(RequiredAttribute), false).Any())
-                    setProperty = Expression.Block(setProperty,
-                        Expression.IfThen(
-                            Expression.Equal(propertyExp, Expression.Constant(default, p.PropertyType)),
-                            Expression.Throw(Expression.New(typeof(NullReferenceException).GetConstructor(new[] { typeof(string) })!, Expression.Constant("")))));
-
-                return (key: p.Name, value: setProperty);
-            }).ToArray();
-
-        var actionType = typeof(Action<>).MakeGenericType(contextType);
-        _parser = Expression.Lambda(actionType, Expression.Block(setProperties.Select(p => p.value)), contextParam).Compile();
-        _updaters = setProperties.ToDictionary(p => p.key, p => Expression.Lambda(actionType, p.value, contextParam).Compile());
-    }
-
+    protected readonly IDataLoader _loader;
+    protected readonly IDataPackMapper<ContextT> _mapper;
     protected readonly ILogger? _logger;
 
-    public ContextT? Data { get; private set; }
+    protected ContextT? _data;
 
-    public DataPack(ILogger? logger = null)
+    public ContextT Data => _data ?? throw new InvalidOperationException();
+
+    public event EventHandler<IDataUpdatedEventArgs>? OnDataUpdated;
+
+    public DataPack(IDataLoader loader, IDataPackMapper<ContextT> mapper, ILogger? logger = null)
     {
+        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger;
     }
 
-    public void Load()
+    public IDataPack<ContextT> Load()
     {
-        var context = new ContextT();
-        _parser.DynamicInvoke(context);
-        Data = context;
-    }
-
-    protected void Update(string propertyKey)
-    {
-        if (Data == null)
+        if (_data != null)
             throw new InvalidOperationException();
-        _updaters[propertyKey].DynamicInvoke(Data);
+        var context = new ContextT();
+        try
+        {
+            _mapper.LoadProperties()(_loader, context);
+        }
+        catch (TargetInvocationException ex)
+        {
+            throw ex.InnerException!;
+        }
+        _data = context;
+        _loader.OnDataUpdated += Update;
+        return this;
     }
 
-    public abstract object? GetData(string propertyKey, string propertyName, Type type);
+    public IDataPack<ContextT> Save() => throw new NotSupportedException();
+
+    private void Update(object? sender, IDataUpdatedEventArgs e)
+    {
+        if (_data == null)
+            throw new InvalidOperationException();
+        try
+        {
+            _mapper.LoadProperty(e.Key)(_loader, _data);
+            _logger?.LogInformation("Pack property '{key}' updated", e.Key);
+        }
+        catch (KeyNotFoundException)
+        {
+            return;
+        }
+        catch (TargetInvocationException ex)
+        {
+            _logger?.LogError(ex.InnerException, "Pack property '{key}' dont updated", e.Key);
+            return;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex.InnerException, "Pack property '{key}' dont updated", e.Key);
+            return;
+        }
+        OnDataUpdated?.Invoke(this, e);
+    }
+
+    private bool disposedValue;
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                _loader.Dispose();
+            }
+
+            disposedValue = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
 }

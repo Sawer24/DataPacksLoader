@@ -1,11 +1,11 @@
 ﻿namespace FilePacksLoader.Schema;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class PropertyNameAttribute : Attribute
+public class FileNameAttribute : Attribute
 {
     public string Name { get; set; }
 
-    public PropertyNameAttribute(string name)
+    public FileNameAttribute(string name)
     {
         Name = name;
     }

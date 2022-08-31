@@ -4,10 +4,12 @@ namespace JsonFilesPackTest;
 
 public class TestDataContext
 {
-    [Required]
+    //[Required]
     [NotCombined]
-    [PropertyName("Desc")]
-    public DataPackDescription? Description { get; protected set; }
+    [FileName("desc")]
+    public DataPackDescription? Description { get; set; }
 
-    public List<TestModel>? TestModels { get; protected set; }
+    [Required]
+    [FileName("models")]
+    public List<TestModel>? TestModels { get; set; }
 }
