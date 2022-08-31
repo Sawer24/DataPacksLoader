@@ -5,7 +5,7 @@ using System.Text.Json;
 
 var logger = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Trace).AddConsole()).CreateLogger(nameof(DataPacksLoader.DataPacksCollection<DataContext>));
 
-var loader = PacksLoaderFactory.CreateJsonDataPacksCollection<DataContext>("test", logger: logger)
+var loader = PacksLoaderFactory.CreateJsonDataPacksCollection<DataContext>("exampleData", logger: logger)
     .Load()
     .Combine();
 

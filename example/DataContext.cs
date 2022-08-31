@@ -16,5 +16,5 @@ public class DataContext
     [FileName("modelsDict")]
     public Dictionary<int, SecondModel>? Dictionary { get; set; }
 
-    public Version Version => Description!.Version;
+    public Version? Version => Description?.Version;
 }
