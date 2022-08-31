@@ -5,15 +5,15 @@ namespace DataPacksLoader.Files;
 
 public static class PacksLoaderFactory
 {
-    public static IDataPack<ContextT> CreateJsonDataPack<ContextT>(string path, FilesPropertiesPolicy policy, IDataSerializer serializer, ILogger? logger = null) where ContextT : class, new()
+    public static IDataPack<ContextT> CreateJsonDataPack<ContextT>(string path, JsonSerializerOptions? options = null, Predicate<string>? folgersFilter = null, ILogger? logger = null) where ContextT : class, new()
     {
         var mapperOptions = new DataPackMapperOptions
         {
-            PropertiesPolicy = policy
+            PropertiesPolicy = new FilesPropertiesPolicy(".json")
         };
         return new DataPackBuilder<ContextT>()
             .UseFilesLoader(path, b => b
-                .UseSerializer(serializer)
+                .UseSerializer(new JsonDataSerializer(options))
                 .UseLogger(logger)
                 .UseWatcher())
             .UseMapper(b => b
@@ -22,26 +22,11 @@ public static class PacksLoaderFactory
             .UseLogger(logger).Build();
     }
 
-    public static IDataPack<ContextT> CreateJsonDataPack<ContextT>(string path, FilesPropertiesPolicy policy, JsonSerializerOptions? options = null, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPack<ContextT>(path, policy, new JsonDataSerializer(options), logger);
-    }
-
-    public static IDataPack<ContextT> CreateJsonDataPack<ContextT>(string path, IDataSerializer serializer, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPack<ContextT>(path, new FilesPropertiesPolicy(".json"), serializer, logger);
-    }
-
-    public static IDataPack<ContextT> CreateJsonDataPack<ContextT>(string path, JsonSerializerOptions? options = null, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPack<ContextT>(path, new FilesPropertiesPolicy(".json"), new JsonDataSerializer(options), logger);
-    }
-
-    public static IDataPacksCollection<ContextT> CreateJsonDataPacksCollection<ContextT>(string path, FilesPropertiesPolicy policy, IDataSerializer serializer, ILogger? logger = null) where ContextT : class, new()
+    public static IDataPacksCollection<ContextT> CreateJsonDataPacksCollection<ContextT>(string path, JsonSerializerOptions? options = null, Predicate<string>? folgersFilter = null, ILogger? logger = null) where ContextT : class, new()
     {
         var mapperOptions = new DataPackMapperOptions
         {
-            PropertiesPolicy = policy,
+            PropertiesPolicy = new FilesPropertiesPolicy(".json"),
             Combiner = new DataCombinersCollection
             {
                 Factories = new List<IDataCombinerFactory>
@@ -53,27 +38,13 @@ public static class PacksLoaderFactory
         };
         return new DataPacksCollectionBuilder<ContextT>()
             .UseFilesSource(path, b => b
-                .UseSerializer(serializer)
+                .UseSerializer(new JsonDataSerializer(options))
+                .AddFilter(folgersFilter)
                 .UseLogger(logger)
                 .UseWatcher())
             .UseMapper(b => b
                 .UseOptions(mapperOptions)
                 .UseLogger(logger))
             .UseLogger(logger).Build();
-    }
-
-    public static IDataPacksCollection<ContextT> CreateJsonDataPacksCollection<ContextT>(string path, FilesPropertiesPolicy policy, JsonSerializerOptions? options = null, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPacksCollection<ContextT>(path, policy, new JsonDataSerializer(options), logger);
-    }
-
-    public static IDataPacksCollection<ContextT> CreateJsonDataPacksCollection<ContextT>(string path, IDataSerializer serializer, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPacksCollection<ContextT>(path, new FilesPropertiesPolicy(".json"), serializer, logger);
-    }
-
-    public static IDataPacksCollection<ContextT> CreateJsonDataPacksCollection<ContextT>(string path, JsonSerializerOptions? options = null, ILogger? logger = null) where ContextT : class, new()
-    {
-        return CreateJsonDataPacksCollection<ContextT>(path, new FilesPropertiesPolicy(".json"), new JsonDataSerializer(options), logger);
     }
 }

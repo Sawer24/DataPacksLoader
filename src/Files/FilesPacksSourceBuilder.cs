@@ -6,6 +6,7 @@ public class FilesPacksSourceBuilder
 {
     protected string _path;
     protected IDataSerializer? _serializer;
+    protected Predicate<string>? _folgersFilter;
     protected ILogger? _logger;
     protected bool _isUseWatcher;
 
@@ -18,12 +19,27 @@ public class FilesPacksSourceBuilder
     {
         if (_serializer == null)
             throw new InvalidOperationException("Serializer not specified");
-        return new FilesPacksSource(_path, _isUseWatcher, _serializer, _logger);
+        return new FilesPacksSource(_path, _isUseWatcher, _serializer, _folgersFilter, _logger);
     }
 
     public FilesPacksSourceBuilder UseSerializer(IDataSerializer serializer)
     {
         _serializer = serializer;
+        return this;
+    }
+
+    public FilesPacksSourceBuilder ClearFilters()
+    {
+        _folgersFilter = null;
+        return this;
+    }
+
+    public FilesPacksSourceBuilder AddFilter(Predicate<string>? filter)
+    {
+        if (_folgersFilter == null)
+            _folgersFilter = filter;
+        else if (filter != null)
+            _folgersFilter = (s) => _folgersFilter(s) && filter(s);
         return this;
     }
 

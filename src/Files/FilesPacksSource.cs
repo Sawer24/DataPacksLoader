@@ -9,17 +9,19 @@ public class FilesPacksSource : IDataPacksSource
 
     private readonly bool _isUseWatcher;
     private readonly FileSystemWatcher? _watcher;
+    private readonly Predicate<string>? _folgersFilter;
 
     public string Path { get; }
 
     public event EventHandler<IPackUpdatedEventArgs>? OnPackUpdated;
 
-    public FilesPacksSource(string path, bool isUseWatcher, IDataSerializer serializer, ILogger? logger = null)
+    public FilesPacksSource(string path, bool isUseWatcher, IDataSerializer serializer, Predicate<string>? folgersFilter = null, ILogger? logger = null)
     {
         if (!Directory.Exists(path))
             throw new DirectoryNotFoundException($"'{path}' not found");
         Path = path;
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _folgersFilter = folgersFilter;
         _logger = logger;
         if (_isUseWatcher = isUseWatcher)
         {
@@ -37,7 +39,10 @@ public class FilesPacksSource : IDataPacksSource
 
     public IEnumerable<string> GetKeys()
     {
-        return Directory.GetDirectories(Path, "*", SearchOption.TopDirectoryOnly).Select(p => System.IO.Path.GetFullPath(p));
+        var folgers = Directory.GetDirectories(Path, "*", SearchOption.TopDirectoryOnly).Select(p => System.IO.Path.GetFullPath(p));
+        if (_folgersFilter != null)
+            return folgers.Where(f => _folgersFilter(f));
+        return folgers;
     }
 
     public IDataLoader? GetLoader(string key)
