@@ -25,3 +25,32 @@ public static class DataPacksCollectionBuilderExtensions
         return collectionBuilder;
     }
 }
+
+public static class DataPackMapperOptionsBuilderExtensions
+{
+    public static DataPackMapperOptionsBuilder UseFilesPolicy(this DataPackMapperOptionsBuilder optionsBuilder, string filesExtension)
+    {
+        optionsBuilder.UsePropertiesPolicy(new FilesPropertiesPolicy(filesExtension));
+        return optionsBuilder;
+    }
+    public static DataPackMapperOptionsBuilder UseTextFilesPolicy(this DataPackMapperOptionsBuilder optionsBuilder) => UseFilesPolicy(optionsBuilder, ".txt");
+    public static DataPackMapperOptionsBuilder UseJsontFilesPolicy(this DataPackMapperOptionsBuilder optionsBuilder) => UseFilesPolicy(optionsBuilder, ".json");
+}
+
+public static class DataPackMapperBuilderExtensions
+{
+    public static DataPackMapperBuilder<ContextT> UseDefaultFilesOptions<ContextT>(this DataPackMapperBuilder<ContextT> mapperBuilder, string filesExtension) where ContextT : class, new()
+    {
+        mapperBuilder.UseOptions(new DataPackMapperOptionsBuilder()
+            .UseFilesPolicy(filesExtension)
+            .UseDefaultCombiner()
+            .Build());
+        return mapperBuilder;
+    }
+
+    public static DataPackMapperBuilder<ContextT> UseDefaultTextFilesOptions<ContextT>(this DataPackMapperBuilder<ContextT> mapperBuilder) where ContextT : class, new()
+        => UseDefaultFilesOptions(mapperBuilder, ".txt");
+
+    public static DataPackMapperBuilder<ContextT> UseDefaultJsonFilesOptions<ContextT>(this DataPackMapperBuilder<ContextT> mapperBuilder) where ContextT : class, new()
+        => UseDefaultFilesOptions(mapperBuilder, ".json");
+}

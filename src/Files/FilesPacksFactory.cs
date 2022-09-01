@@ -13,9 +13,7 @@ public static class FilesPacksFactory
                 .UseLogger(logger)
                 .UseWatcher())
             .UseMapper(b => b
-                .UseOptions(o => o
-                    .UsePropertiesPolicy(FilesPropertiesPolicyFactory.CreateJson())
-                    .UseCombiner(DataCombinersCollectionFactory.CreateDefault()))
+                .UseDefaultJsonFilesOptions()
                 .UseLogger(logger))
             .UseLogger(logger).Build();
     }
@@ -29,9 +27,7 @@ public static class FilesPacksFactory
                 .UseLogger(logger)
                 .UseWatcher())
             .UseMapper(b => b
-                .UseOptions(o => o
-                    .UsePropertiesPolicy(FilesPropertiesPolicyFactory.CreateJson())
-                    .UseCombiner(DataCombinersCollectionFactory.CreateDefault()))
+                .UseDefaultJsonFilesOptions()
                 .UseLogger(logger))
             .UseLogger(logger).Build();
     }

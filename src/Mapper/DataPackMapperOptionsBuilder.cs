@@ -24,4 +24,12 @@ public class DataPackMapperOptionsBuilder
         _combiner = combiner;
         return this;
     }
+
+    public DataPackMapperOptionsBuilder UseDefaultCombiner(Action<DataCombinersCollectionBuilder>? action = null)   
+    {
+        var builder = new DataCombinersCollectionBuilder();
+        builder.AddFactory(new CollectionsDataCombinerFactory());
+        action?.Invoke(builder);
+        return UseCombiner(builder.Build());
+    }
 }
